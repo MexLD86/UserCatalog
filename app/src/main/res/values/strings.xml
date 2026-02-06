@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">User Directory</string>
+    <string name="title_list_user">Список пользователей:</string>
+    <string name="button_save">Сохранить</string>
+    <string name="age_user">Возраст:</string>
+    <string name="input_age">Введите возраст</string>
+    <string name="input_name">Введите имя</string>
+    <string name="name_user">Имя:</string>
+    <string name="title_toolbar">Каталог пользователей</string>
+</resources>
