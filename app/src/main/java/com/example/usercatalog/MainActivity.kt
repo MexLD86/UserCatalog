@@ -7,11 +7,13 @@ import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import com.example.usercatalog.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
-    private var users: MutableList<User> = mutableListOf()
+    lateinit var userViewModel: UserViewModel
 
+    private lateinit var adapter: ArrayAdapter <User> //стандартный ArrayAdapter
     private lateinit var binding: ActivityMainBinding
 
     @SuppressLint("MissingInflatedId")
@@ -22,17 +24,36 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbarTB)
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, users)
+        //Viewmodel инициализация
+        userViewModel = ViewModelProvider(this)[UserViewModel::class.java]
+
+
+        //инициализация стандартного ArrayAdapter
+        //используем простой layout для отображения
+        adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_list_item_1, //стандартный layout Android
+            mutableListOf()) //пустой список изначально
         binding.usersLV.adapter = adapter
+
+
+        //подписка на изменения списка пользователей через observe
+        userViewModel.users.observe(this,{ userList ->
+            //когда данные в LievData изменяются, обновляем Adapter
+            adapter.clear() //очищаем текущие данные
+            adapter.addAll(userList)//добавляем все элементы из нового списка
+            adapter.notifyDataSetChanged() //обновляем отображение
+
+        })
 
         binding.saveBTN.setOnClickListener {
             saveUser()
-            adapter.notifyDataSetChanged()
         }
 
 
-        binding.usersLV.onItemClickListener =
+        binding.usersLV.setOnItemClickListener { parent, view, position, id ->
             MyDialog.createDialog(this, adapter)
+        }
     }
 
     private fun saveUser() {
@@ -54,8 +75,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         val user = User(name, age)
-        users.add(user)
-
+        userViewModel.addUser(user)
+        //очистка полей ввода
         clearInputFields()
 
         showToast("Пользователь $name добавлен")

@@ -5,11 +5,10 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.DialogFragment
 
 class MyDialog {
     companion object {
-        fun createDialog(context: Context, adapter: ArrayAdapter<User?>) =
+        fun createDialog(context: Context, adapter: ArrayAdapter<User>) =
             AdapterView.OnItemClickListener { parent, v, position, id ->
                 val builder = AlertDialog.Builder(context)
                 builder.setTitle("Удаление")
