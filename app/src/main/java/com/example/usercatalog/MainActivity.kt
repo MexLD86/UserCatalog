@@ -6,9 +6,11 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.usercatalog.databinding.ActivityMainBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
     lateinit var userViewModel: UserViewModel
@@ -50,11 +52,12 @@ class MainActivity : AppCompatActivity() {
             saveUser()
         }
 
-
-        binding.usersLV.setOnItemClickListener { parent, view, position, id ->
-            MyDialog.createDialog(this, adapter)
+        //обработчик клика по элементу списка
+        binding.usersLV.setOnItemClickListener { _, _, position, _ ->
+            showMaterialDeleteDialog(position)
         }
     }
+
 
     private fun saveUser() {
         val name = binding.nameET.text.toString().trim()
@@ -70,16 +73,89 @@ class MainActivity : AppCompatActivity() {
         }
 
         val age = ageText.toIntOrNull()
-        if (age == null || age <= 0) {
+        if (age == null || age <= 0 || age > 120) {
             showToast("Введите корректный возраст")
+            return
         }
 
-        val user = User(name, age)
-        userViewModel.addUser(user)
+//        val userId = userViewModel.addUser(name, age)
         //очистка полей ввода
         clearInputFields()
 
-        showToast("Пользователь $name добавлен")
+        showToast("Пользователь $name добавлен.")
+    }
+
+    fun showMaterialDeleteDialog (position: Int) {
+        val userToDelete = userViewModel.getUserById(position) ?: return
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Удаление пользователя")
+            .setMessage("Удалить ${userToDelete.name} (${userToDelete.age} лет)?")
+            .setIcon(R.drawable.ic_delete)
+            .setPositiveButton("Удалить") { _, _ ->
+                deleteUserById(position)
+            }
+            .setNegativeButton("Отмена") {dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNeutralButton("Подробнее") { _, _, ->
+                //дополнительная кнопка для информации
+                showUserInfoDialog(userToDelete)
+            }
+            .show()
+    }
+
+
+    private fun showDeleteConfirmationDialog(position: Int) {
+        val userToDelete = userViewModel.getUserById(position)
+
+        if (userToDelete == null) {
+            showToast("Ошибка: пользователь не найден")
+            return
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Удаление пользователя")
+            .setMessage("Вы уверены, что хотите удалить пользователя ${userToDelete.name} (${userToDelete.age} лет)?")
+            .setPositiveButton("Да") {_, _, ->
+                //вызываем удаление при нажатии "Да"
+                deleteUserById(position)
+            }
+            .setNegativeButton("Нет") { dialog, which ->
+                dialog.cancel()//просто закрываем диалог
+            }
+            .setNeutralButton("Подробнее") { _, _, ->
+                //дополнительная кнопка для информации
+                showUserInfoDialog(userToDelete)
+
+            }
+            .setCancelable(false) //нельзя закрыть кнопкой "Назад"
+            .create()
+        //показываем диалог
+        dialog.show()
+
+        //можно изменить цвета кнопок
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(resources.getColor((android.R.color.holo_green_dark)))
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(resources.getColor((android.R.color.holo_red_dark)))
+
+    }
+    private fun showUserInfoDialog(user: User) {
+        AlertDialog.Builder(this)
+            .setTitle("Инфорсация о пользователе")
+            .setMessage("Имя ${user.name}\n Возраст ${user.age} лет")
+            .setPositiveButton("Хорошо", null)
+            .show()
+    }
+    private fun deleteUserById(id: Int) {
+        //получаем пользователя до удаления (для нейтральной кнопки)
+        val userToDelete = userViewModel.getUserById(id)
+
+        //удаляем через ViewModel
+        val isDelete = userViewModel.removeUserById(id)
+        if (isDelete && userToDelete != null) {
+            showToast("Пользователь ${userToDelete.name} успешно удален")
+        } else {
+            showToast("Ошибка при удалении пользователя")
+        }
     }
 
     private fun clearInputFields() {
@@ -112,6 +188,4 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
-
 }
